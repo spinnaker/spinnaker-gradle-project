@@ -22,6 +22,7 @@ import com.jfrog.bintray.gradle.BintrayPlugin
 import com.jfrog.bintray.gradle.BintrayUploadTask
 import com.jfrog.bintray.gradle.Utils
 import com.netflix.gradle.plugins.deb.Deb
+import com.netflix.gradle.plugins.rpm.Rpm
 import groovy.json.JsonBuilder
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -241,6 +242,205 @@ class OspackageBintrayPublishPlugin implements Plugin<Project> {
             project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
                 publishDeb.onlyIf {
                     graph.hasTask(':final') || graph.hasTask(':candidate') || (project.hasProperty("forcePublish$debTaskName") && project.property("forcePublish$debTaskName") as Boolean)
+                }
+            }
+        }
+        project.tasks.withType(Rpm) { Rpm rpm ->
+            rpm.release = packageExtension.buildNumber
+            String rpmTaskName = "${Character.toUpperCase(rpm.name.charAt(0))}${rpm.name.substring(1)}"
+            def publishRpm = project.tasks.create("publish$rpmTaskName")
+            publishRpm.doFirst {
+                BintrayExtension bintrayCfg = project.extensions.getByType(BintrayExtension)
+                def http = BintrayHttpClientFactory.create(bintrayCfg.apiUrl, bintrayCfg.user, bintrayCfg.key)
+                def org = bintrayCfg.pkg.userOrg ?: bintrayCfg.user
+                def repoName = packageExtension.packageRepo ?: bintrayCfg.pkg.repo
+                def repoPath = "$org/$repoName"
+                def packageName = rpm.packageName
+                def packagePath = "$repoPath/$packageName"
+                String versionName = bintrayCfg.pkg.version.name ?: project.version.toString()
+                if (versionName.endsWith('-SNAPSHOT')) {
+                    versionName = versionName.replaceAll(/SNAPSHOT/, Long.toString(System.currentTimeMillis()))
+                }
+
+                def setAttributes = { attributesPath, attributes, entity, entityName ->
+                    http.request(POST, JSON) {
+                        uri.path = attributesPath
+                        def builder = new JsonBuilder()
+                        builder.content = attributes.collect {
+                            //Support both arrays and singular values - coerce to an array of values
+                            ['name': it.key, 'values': [it.value].flatten()]
+                        }
+                        body = builder.toString()
+                        response.success = { resp ->
+                            project.logger.info("Attributes set on $entity '$entityName'.")
+                        }
+                        response.failure = { resp, reader ->
+                            throw new GradleException(
+                                    "Could not set attributes on $entity '$entityName': $resp.statusLine $reader")
+                        }
+                    }
+                }
+
+                //create package if needed
+                def createPackageIfNeeded = {
+                    def createPackage = false
+                    http.request(HEAD) {
+                        uri.path = "/packages/$packagePath"
+                        response.success = { resp ->
+                            project.logger.rpmug("Package '$packageName' exists.")
+                        }
+                        response.'404' = { resp ->
+                            project.logger.info("Package '$packageName' does not exist. Attempting to creating it...")
+                            createPackage = true
+                        }
+                    }
+                    if (createPackage) {
+                        if (bintrayCfg.dryRun) {
+                            logger.info("(Dry run) Created pakage '$packagePath'.")
+                            return
+                        }
+                        http.request(POST, JSON) {
+                            uri.path = "/packages/$repoPath"
+                            body = [name                   : packageName, desc: bintrayCfg.pkg.desc, licenses: bintrayCfg.pkg.licenses, labels: bintrayCfg.pkg.labels,
+                                    website_url            : bintrayCfg.pkg.websiteUrl, issue_tracker_url: bintrayCfg.pkg.websiteUrl, vcs_url: bintrayCfg.pkg.vcsUrl,
+                                    public_download_numbers: bintrayCfg.pkg.publicDownloadNumbers]
+
+                            response.success = { resp ->
+                                project.logger.info("Created package '$packagePath'.")
+                            }
+                            response.failure = { resp, reader ->
+                                throw new GradleException("Could not create package '$packagePath': $resp.statusLine $reader")
+                            }
+                        }
+                        if (bintrayCfg.pkg.attributes) {
+                            setAttributes "/packages/$packagePath/attributes", bintrayCfg.pkg.attributes, 'package', packageName
+                        }
+                    }
+                }
+
+                //create version if needed
+                def createVersionIfNeeded = {
+                    def createVersion
+                    http.request(HEAD) {
+                        uri.path = "/packages/$packagePath/versions/$versionName"
+                        response.success = { resp ->
+                            project.logger.rpmug("Version '$packagePath/$versionName' exists.")
+                        }
+                        response.'404' = { resp ->
+                            project.logger.info("Version '$packagePath/$versionName' does not exist. Attempting to creating it...")
+                            createVersion = true
+                        }
+                    }
+                    if (createVersion) {
+                        if (bintrayCfg.dryRun) {
+                            logger.info("(Dry run) Created verion '$packagePath/$versionName'.")
+                            return
+                        }
+                        http.request(POST, JSON) {
+                            uri.path = "/packages/$packagePath/versions"
+                            def versionReleased = Utils.toIsoDateFormat(bintrayCfg.pkg.version.released)
+                            body = [name: versionName, desc: bintrayCfg.pkg.version.desc, released: versionReleased, vcs_tag: bintrayCfg.pkg.version.vcsTag]
+                            response.success = { resp ->
+                                logger.info("Created version '$versionName'.")
+                            }
+                            response.failure = { resp, reader ->
+                                throw new GradleException("Could not create version '$versionName': $resp.statusLine $reader")
+                            }
+                        }
+                        if (bintrayCfg.pkg.version.attributes) {
+                            setAttributes "/packages/$packagePath/versions/$versionName/attributes", bintrayCfg.pkg.version.attributes,
+                                    'version', versionName
+                        }
+                    }
+                }
+
+                def uploadArtifact = {
+                    if (!rpm.archivePath.exists()) {
+                        project.logger.error("Not uploading missing file $rpm.archivePath")
+                        return
+                    }
+                    def rpmFileName = rpm.archivePath.name
+                    def poolPath = "pool/main/${packageName.charAt(0)}/$packageName"
+                    def versionPath = "$packagePath/$versionName"
+                    def uploadUri = "/content/$versionPath/$poolPath/$rpmFileName;rpm_distribution=$packageExtension.rpmDistribution;rpm_component=$packageExtension.rpmComponent;rpm_architecture=$packageExtension.rpmArchitectures"
+                    def fullUri = "$bintrayCfg.apiUrl$uploadUri"
+                    rpm.archivePath.withInputStream { is ->
+                        is.metaClass.totalBytes = {
+                            rpm.archivePath.length()
+                        }
+                        project.logger.info("Uploading to $fullUri...")
+                        if (bintrayCfg.dryRun) {
+                            project.logger.info("(Dry run) Uploaded to '$fullUri'.")
+                            return
+                        }
+                        http.request(PUT) {
+                            uri.path = uploadUri
+                            requestContentType = BINARY
+                            body = is
+                            response.success = { resp ->
+                                project.logger.info("Uploaded to '$fullUri'.")
+                            }
+                            response.failure = { resp, reader ->
+                                throw new GradleException("Could not upload to '$fullUri': $resp.statusLine $reader")
+                            }
+                        }
+                    }
+                }
+
+                def gpgSignVersion = {
+                    if (bintrayCfg.dryRun) {
+                        logger.info("(Dry run) Signed verion '$packagePath/$versionName'.")
+                        return
+                    }
+                    http.request(POST, JSON) {
+                        uri.path = "/gpg/$packagePath/versions/$versionName"
+                        if (bintrayCfg.pkg.version.gpg.passphrase) {
+                            body = [passphrase: bintrayCfg.pkg.version.gpg.passphrase]
+                        }
+                        response.success = { resp ->
+                            project.logger.info("Signed version '$versionName'.")
+                        }
+                        response.failure = { resp, reader ->
+                            throw new GradleException("Could not sign version '$versionName': $resp.statusLine $reader")
+                        }
+                    }
+                }
+
+                def publishVersion = {
+                    def publishUri = "/content/$packagePath/$versionName/publish"
+                    if (bintrayCfg.dryRun) {
+                        logger.info("(Dry run) Pulished verion '$packagePath/$versionName'.")
+                        return
+                    }
+                    http.request(POST, JSON) {
+                        uri.path = publishUri
+                        response.success = { resp ->
+                            project.logger.info("Published '$packagePath/$versionName'.")
+                        }
+                        response.failure = { resp, reader ->
+                            throw new GradleException("Could not publish '$packagePath/$versionName': $resp.statusLine $reader")
+                        }
+                    }
+                }
+
+                createPackageIfNeeded()
+                createVersionIfNeeded()
+                uploadArtifact()
+                gpgSignVersion()
+                publishVersion()
+            }
+
+            publishRpm.mustRunAfter('build')
+            publishRpm.dependsOn(rpm)
+            Upload installTask = project.tasks.withType(Upload)?.findByName('install')
+            if (installTask) {
+                publishRpm.dependsOn(installTask)
+            }
+            publishRpm.group = BintrayUploadTask.GROUP
+            project.rootProject.tasks.release.dependsOn(publishRpm)
+            project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+                publishRpm.onlyIf {
+                    graph.hasTask(':final') || graph.hasTask(':candidate') || (project.hasProperty("forcePublish$rpmTaskName") && project.property("forcePublish$rpmTaskName") as Boolean)
                 }
             }
         }
