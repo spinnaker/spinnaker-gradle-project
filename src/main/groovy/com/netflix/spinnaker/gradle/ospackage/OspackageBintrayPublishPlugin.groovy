@@ -354,94 +354,10 @@ class OspackageBintrayPublishPlugin implements Plugin<Project> {
                     }
                 }
 
-                def uploadArtifact = {
-                    if (!rpm.archivePath.exists()) {
-                        project.logger.error("Not uploading missing file $rpm.archivePath")
-                        return
-                    }
-                    def rpmFileName = rpm.archivePath.name
-                    def poolPath = "pool/main/${packageName.charAt(0)}/$packageName"
-                    def versionPath = "$packagePath/$versionName"
-                    def uploadUri = "/content/$versionPath/$poolPath/$rpmFileName;rpm_distribution=$packageExtension.rpmDistribution;rpm_component=$packageExtension.rpmComponent;rpm_architecture=$packageExtension.rpmArchitectures"
-                    def fullUri = "$bintrayCfg.apiUrl$uploadUri"
-                    rpm.archivePath.withInputStream { is ->
-                        is.metaClass.totalBytes = {
-                            rpm.archivePath.length()
-                        }
-                        project.logger.info("Uploading to $fullUri...")
-                        if (bintrayCfg.dryRun) {
-                            project.logger.info("(Dry run) Uploaded to '$fullUri'.")
-                            return
-                        }
-                        http.request(PUT) {
-                            uri.path = uploadUri
-                            requestContentType = BINARY
-                            body = is
-                            response.success = { resp ->
-                                project.logger.info("Uploaded to '$fullUri'.")
-                            }
-                            response.failure = { resp, reader ->
-                                throw new GradleException("Could not upload to '$fullUri': $resp.statusLine $reader")
-                            }
-                        }
-                    }
-                }
-
-                def gpgSignVersion = {
-                    if (bintrayCfg.dryRun) {
-                        logger.info("(Dry run) Signed verion '$packagePath/$versionName'.")
-                        return
-                    }
-                    http.request(POST, JSON) {
-                        uri.path = "/gpg/$packagePath/versions/$versionName"
-                        if (bintrayCfg.pkg.version.gpg.passphrase) {
-                            body = [passphrase: bintrayCfg.pkg.version.gpg.passphrase]
-                        }
-                        response.success = { resp ->
-                            project.logger.info("Signed version '$versionName'.")
-                        }
-                        response.failure = { resp, reader ->
-                            throw new GradleException("Could not sign version '$versionName': $resp.statusLine $reader")
-                        }
-                    }
-                }
-
-                def publishVersion = {
-                    def publishUri = "/content/$packagePath/$versionName/publish"
-                    if (bintrayCfg.dryRun) {
-                        logger.info("(Dry run) Pulished verion '$packagePath/$versionName'.")
-                        return
-                    }
-                    http.request(POST, JSON) {
-                        uri.path = publishUri
-                        response.success = { resp ->
-                            project.logger.info("Published '$packagePath/$versionName'.")
-                        }
-                        response.failure = { resp, reader ->
-                            throw new GradleException("Could not publish '$packagePath/$versionName': $resp.statusLine $reader")
-                        }
-                    }
-                }
-
                 createPackageIfNeeded()
                 createVersionIfNeeded()
-                uploadArtifact()
-                gpgSignVersion()
-                publishVersion()
             }
 
-            publishRpm.mustRunAfter('build')
-            publishRpm.dependsOn(rpm)
-            Upload installTask = project.tasks.withType(Upload)?.findByName('install')
-            if (installTask) {
-                publishRpm.dependsOn(installTask)
-            }
-            publishRpm.group = BintrayUploadTask.GROUP
-            project.rootProject.tasks.release.dependsOn(publishRpm)
-            project.gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
-                publishRpm.onlyIf {
-                    graph.hasTask(':final') || graph.hasTask(':candidate') || (project.hasProperty("forcePublish$rpmTaskName") && project.property("forcePublish$rpmTaskName") as Boolean)
-                }
             }
         }
     }
