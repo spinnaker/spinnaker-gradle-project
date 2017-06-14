@@ -357,8 +357,6 @@ class OspackageBintrayPublishPlugin implements Plugin<Project> {
                 createPackageIfNeeded()
                 createVersionIfNeeded()
             }
-
-            }
         }
     }
 }
