@@ -90,14 +90,14 @@ class SpinnakerPackagePlugin implements Plugin<Project> {
         def yum = 'which yum'.execute()
         apt.waitFor()
         yum.waitFor()
-        if (apt.exitValue() == 0) && (yum.exitValue() == 1) {
+        if (apt.exitValue() == 0 && yum.exitValue() == 1) {
             systemdPath = '/lib/systemd/system'
-        } else if (apt.exitValue() == 1) && (yum.exitValue() == 0) {
+        } else if (apt.exitValue() == 1 && yum.exitValue() == 0) {
             systemdPath = '/usr/lib/systemd/system'
         }
 
         def systemdService = project.file("lib/systemd/system/${appName}.service")
-        if (systemdService.exists()) && (systemdPath.exists()) {
+        if (systemdService.exists() && systemdPath.exists()) {
             extension.from(systemdService) {
                 into(systemdPath)
                 setUser('root')
