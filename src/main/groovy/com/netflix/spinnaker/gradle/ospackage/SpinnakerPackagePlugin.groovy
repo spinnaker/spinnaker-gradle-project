@@ -97,7 +97,7 @@ class SpinnakerPackagePlugin implements Plugin<Project> {
         }
 
         def systemdService = project.file("lib/systemd/system/${appName}.service")
-        if (systemdService.exists()) {
+        if (systemdService.exists()) && (systemdPath.exists()) {
             extension.from(systemdService) {
                 into(systemdPath)
                 setUser('root')
