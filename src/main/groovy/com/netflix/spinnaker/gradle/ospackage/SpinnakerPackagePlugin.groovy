@@ -79,11 +79,27 @@ class SpinnakerPackagePlugin implements Plugin<Project> {
                 setFileType(new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
             }
         }
-        
+
+        /* Determine the distro and set the path for systemd unit files
+           if apt exits 0 and yum exits 1 then this is a debian-based
+           OS. Conversely, if apt exits 1 and yum exits 0 it is a
+           redhat-based OS.
+        */
+        String systemdPath
+        def apt = 'which apt'.execute()
+        def yum = 'which yum'.execute()
+        apt.waitFor()
+        yum.waitFor()
+        if (apt.exitValue() == 0 && yum.exitValue() == 1) {
+            systemdPath = '/lib/systemd/system'
+        } else if (apt.exitValue() == 1 && yum.exitValue() == 0) {
+            systemdPath = '/usr/lib/systemd/system'
+        }
+
         def systemdService = project.file("lib/systemd/system/${appName}.service")
-        if (systemdService.exists()) {
+        if (systemdService.exists() && systemdPath.exists()) {
             extension.from(systemdService) {
-                into('/lib/systemd/system')
+                into(systemdPath)
                 setUser('root')
                 setPermissionGroup('root')
                 setFileType(new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
