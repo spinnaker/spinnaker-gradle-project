@@ -21,8 +21,8 @@ import org.gradle.api.Project
 import org.gradle.api.XmlProvider
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.internal.xml.XmlTransformer
 import org.gradle.plugins.ide.idea.IdeaPlugin
+import org.yaml.snakeyaml.Yaml
 
 class SpinnakerIdeaConfigPlugin implements Plugin<Project> {
 
@@ -61,6 +61,36 @@ class SpinnakerIdeaConfigPlugin implements Plugin<Project> {
                                 option(name: 'allowReplaceKeyword', value: '')
                                 option(name: 'myName', value: 'ASL2')
                                 option(name: 'myLocal', value: 'true')
+                            }
+                        }
+                    }
+
+                    File intellijRunConfigs = new File(System.getProperty('user.home') + '/.spinnaker/intellij.yml')
+                    if (intellijRunConfigs.canRead()) {
+                        Map<String, Object> manifest = new Yaml().load(intellijRunConfigs.text)
+                        if (manifest.containsKey(project.name)) {
+                            (projectNode.component.find { it.@name == 'ProjectRunConfigurationManager' } ?:
+                                    projectNode.appendNode('component', [name: 'ProjectRunConfigurationManager'])).replaceNode {
+
+                                manifest[project.name]?.each { configName, runConfig ->
+                                    component(name: 'ProjectRunConfigurationManager') {
+                                        configuration('default': 'false', name: configName, type: 'Application', factoryName: 'Application') {
+                                            extension(name: 'coverage', enabled: 'false', merge: 'false', runner: 'idea')
+                                            option(name: 'MAIN_CLASS_NAME', value: runConfig.mainClassName)
+                                            option(name: 'VM_PARAMETERS', value: runConfig.vmParameters?.replaceAll('\n', ' '))
+                                            option(name: 'PROGRAM_PARAMETERS', value: '')
+                                            option(name: 'WORKING_DIRECTORY', value: 'file://$PROJECT_DIR$')
+                                            option(name: 'ALTERNATIVE_JRE_PATH_ENABLED', value: 'false')
+                                            option(name: 'ALTERNATIVE_JRE_PATH')
+                                            option(name: 'ENABLE_SWING_INSPECTOR', 'false')
+                                            option(name: 'ENV_VARIABLES')
+                                            option(name: 'PASS_PARENT_ENVS', value: 'true')
+                                            module(name: runConfig.moduleName)
+                                            envs()
+                                            method()
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
