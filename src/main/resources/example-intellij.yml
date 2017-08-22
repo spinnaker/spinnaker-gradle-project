@@ -1,0 +1,16 @@
+# Provided this file is placed in `~/.spinnaker/intellij.yml`, running `./gradlew idea` will auto-generate project
+# run configurations for the project. This file outlines the file format that the plugin expects.
+igor:
+  TestEnv:
+    mainClassName: com.netflix.spinnaker.clouddriver.Main
+    moduleName: clouddriver-web_main
+    vmParameters: |
+      -Dnetflix.account=mytestacct
+      -Dnetflix.environment=test
+      -Dnetflix.stack=test
+      -Deureka.enabled=false
+      -Dspring.config.location=$USER_HOME$/.spinnaker/secrets/,$USER_HOME$/.spinnaker/
+      -Dspring.profiles.active=test,local
+      -Dcaching.writeEnabled=true
+      -Ddynomite.enabled=true
+      -Dredis.enabled=false
