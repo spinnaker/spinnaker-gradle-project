@@ -235,7 +235,7 @@ class OspackageBintrayPublishPlugin implements Plugin<Project> {
                 createVersionIfNeeded()
                 uploadArtifact()
                 gpgSignVersion()
-                publishVersion()
+//                publishVersion()
             }
 
             publishDeb.mustRunAfter('build')
