@@ -27,6 +27,14 @@ idea {
     }
 }
 
+bintray {
+    pkg {
+        userOrg = 'spinnaker'
+        repo = 'gradle'
+        labels = ['Spinnaker', 'Netflix']
+    }
+}
+
 
 subprojects {
     apply plugin: 'groovy'
