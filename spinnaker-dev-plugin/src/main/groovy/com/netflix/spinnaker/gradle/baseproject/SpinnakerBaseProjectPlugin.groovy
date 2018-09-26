@@ -2,6 +2,7 @@ package com.netflix.spinnaker.gradle.baseproject
 
 import com.netflix.spinnaker.gradle.dependency.SpinnakerDependencyPlugin
 import com.netflix.spinnaker.gradle.idea.SpinnakerIdeaConfigPlugin
+import com.netflix.spinnaker.gradle.license.SpinnakerLicenseReportPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
