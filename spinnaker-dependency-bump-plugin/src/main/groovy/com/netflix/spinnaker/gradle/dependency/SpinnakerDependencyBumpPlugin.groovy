@@ -137,6 +137,15 @@ class SpinnakerDependencyBumpPlugin implements Plugin<Project> {
             }
           }
 
+          def labelsUri = "/repos/spinnaker/${upstream.name}/issues/${pr.number}/labels"
+          List<String> labels = ["autobump"]
+          logger.lifecycle("Applying labels ${labels} to issue using ${labelsUri}")
+          try {
+            client.post(labelsUri, labels, List.class)
+          } catch (Exception e) {
+            logger.lifecycle("Could not apply labels ${labels} to PR ${pr.htmlUrl}: ${e.getMessage()}")
+          }
+
           def latestReleaseUri = "/repos/spinnaker/spinnaker-dependencies/releases/latest"
           GitHubResponse resp = client.get(new GitHubRequest(uri: latestReleaseUri, type: LatestRelease.class))
           String reviewer = (resp.body as LatestRelease)?.author?.login
