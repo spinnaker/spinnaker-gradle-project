@@ -12,7 +12,7 @@ class SpinnakerPackagePlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        project.plugins.withType(SpinnakerApplicationPlugin) {
+        if (project.plugins.hasPlugin('spinnaker.application')) {
             project.plugins.apply(OspackageApplicationPlugin)
             ProjectPackagingExtension extension = project.extensions.getByType(ProjectPackagingExtension)
             extension.setOs(Os.LINUX)
@@ -24,6 +24,7 @@ class SpinnakerPackagePlugin implements Plugin<Project> {
                 extension.setVersion(projVer)
             }
 
+            String appName = project.rootProject.name
             extension.setPackageName('spinnaker-' + appName)
             def postInstall = project.file('pkg_scripts/postInstall.sh')
             if (postInstall.exists()) {
