@@ -22,13 +22,7 @@ class SpinnakerApplicationPlugin implements Plugin<Project> {
         appConvention.applicationDefaultJvmArgs << "-Djava.security.egd=file:/dev/./urandom"
 
         project.tasks.withType(CreateStartScripts) {
-            // In Spring Boot 2, spring.config.location overrides the default locations and
-            // spring.config.additional-location should be used to augment the defaults instead of overriding.
-            // To keep this compatible with Spring Boot 1 and 2, still use 'spring.config.location'
-            // but explicitly add in the default config paths (which are unchanged between Boot 1 and 2).
-            // Once all services are on boot 2, this can be changed to additional-location
-            // and the defaults can be removed.
-            it.defaultJvmOpts = appConvention.applicationDefaultJvmArgs + ["-Dspring.config.location=classpath:/,classpath:/config/,file:./,file:./config/,/opt/spinnaker/config/"]
+            it.defaultJvmOpts = appConvention.applicationDefaultJvmArgs + ["-Dspring.config.additional-location=/opt/spinnaker/config/"]
             it.doLast {
                 unixScript.text = unixScript.text.replace('DEFAULT_JVM_OPTS=', '''\
                     if [ -f /etc/default/spinnaker ]; then
