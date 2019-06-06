@@ -15,7 +15,7 @@
  */
 package com.netflix.spinnaker.gradle.codestyle
 
-import com.diffplug.gradle.spotless.FormatExtension
+
 import com.diffplug.gradle.spotless.JavaExtension
 import com.diffplug.gradle.spotless.KotlinExtension
 import com.diffplug.gradle.spotless.SpotlessPlugin
@@ -65,19 +65,6 @@ class SpinnakerCodeStylePlugin implements Plugin<Project> {
             }
           })
         }
-
-        spotless.extension.format(
-          'misc',
-          new Action<FormatExtension>() {
-            @Override
-            void execute(FormatExtension formatExtension) {
-              formatExtension.target('**/.gitignore', '**/*.json', '**/*.yml', '**/*.yaml', '**/*.gradle')
-              formatExtension.trimTrailingWhitespace()
-              formatExtension.indentWithSpaces(2)
-              formatExtension.endWithNewline()
-            }
-          }
-        )
       }
     }
   }
