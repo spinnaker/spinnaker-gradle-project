@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.netflix.spinnaker.gradle.pf4j
+package com.netflix.spinnaker.gradle.extension
 
-import com.netflix.spinnaker.gradle.pf4j.tasks.ChecksumTask
-import com.netflix.spinnaker.gradle.pf4j.tasks.RegistrationTask
+import com.netflix.spinnaker.gradle.extension.tasks.ChecksumTask
+import com.netflix.spinnaker.gradle.extension.tasks.RegistrationTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -29,21 +29,21 @@ import org.gradle.api.tasks.bundling.Zip
 /**
  * Gradle plugin to support spinnaker plugin development life cycle.
  */
-class SpinnakerPf4jPlugin : Plugin<Project> {
+class SpinnakerExtensionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
 
         project.tasks.register("computeChecksum", ChecksumTask::class.java)
         project.tasks.register("registerPlugin", RegistrationTask::class.java)
 
+        // Register assemble service plugin task for each sub project.
         val allBuildDirs: MutableList<String> = mutableListOf()
         project.subprojects.forEach { subProject ->
             allBuildDirs.add("${subProject.name}/build/libs")
 
-            if (!subProject.name.contains("deck")) { // TODO: better way to identify type of project.
+            if (subProject.plugins.hasPlugin(JavaPlugin::class.java)) {
                 subProject.logger.warn("Adding assemble for ${subProject.name}......")
                 val jar = subProject.tasks.getByName(JavaPlugin.JAR_TASK_NAME) as Jar
                 val childSpec: CopySpec = subProject.copySpec().with(jar).into("classes")
-
                 val libSpec: CopySpec = subProject.copySpec().from(subProject.configurations.getByName("runtimeClasspath")).into("lib")
                 subProject.tasks.register<Jar>("assembleServicePluginZip", Jar::class.java) {
                     it.archiveBaseName.set(subProject.name)
@@ -61,6 +61,8 @@ class SpinnakerPf4jPlugin : Plugin<Project> {
             }
         }
         project.logger.debug(allBuildDirs.toString())
+
+        // Register distPluginZip for root project.
         project.tasks.register<Zip>("distPluginZip", Zip::class.java) {
             it.from(allBuildDirs).into("/")
             it.archiveFileName.set("${project.name}-${project.version}.zip")

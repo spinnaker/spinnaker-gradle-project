@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.netflix.spinnaker.gradle.pf4j.tasks
+package com.netflix.spinnaker.gradle.extension.tasks
 
 import org.gradle.api.AntBuilder
 import org.gradle.api.DefaultTask

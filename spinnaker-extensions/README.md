@@ -6,7 +6,7 @@ This **gradle** plugin allows Spinnaker developers to bundle, publish and regist
 
 ```groovy
 plugins {
-   id 'com.netflix.spinnaker.gradle.pf4j.spinnakerpf4j'
+   id 'com.netflix.spinnaker.gradle.extension.spinnakerextension'
 }
 ```
 

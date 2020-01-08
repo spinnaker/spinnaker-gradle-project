@@ -24,7 +24,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm").version("1.3.31")
 }
 
-group = "com.netflix.spinnaker.gradle.pf4j"
+group = "com.netflix.spinnaker.gradle.extension"
 version = "1.0"
 
 repositories {
@@ -46,9 +46,9 @@ dependencies {
 
 gradlePlugin {
     // Define the plugin
-    val spinnakerpf4j by plugins.creating {
-        id = "com.netflix.spinnaker.gradle.pf4j.spinnakerpf4j"
-        implementationClass = "com.netflix.spinnaker.gradle.pf4j.SpinnakerPf4jPlugin"
+    val spinnakerextension by plugins.creating {
+        id = "com.netflix.spinnaker.gradle.extension.spinnakerextension"
+        implementationClass = "com.netflix.spinnaker.gradle.extension.SpinnakerExtensionPlugin"
     }
 }
 
@@ -73,8 +73,8 @@ val check by tasks.getting(Task::class) {
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            groupId = "com.netflix.spinnaker.gradle.pf4j"
-            artifactId = "spinnaker-pf4j-gradle-plugin"
+            groupId = "com.netflix.spinnaker.gradle.extension"
+            artifactId = "spinnaker-extension-plugin"
             version = "1.0"
 
             from(components["java"])
