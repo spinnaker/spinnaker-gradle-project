@@ -50,13 +50,10 @@ class SpinnakerExtensionPlugin : Plugin<Project> {
                     it.archiveExtension.set("zip")
                     it.with(childSpec, libSpec)
                     it.dependsOn(subProject.tasks.findByName("jar"))
-                    it.doLast {
-                        subProject.logger.warn("Building project......")
-                    }
                 }
             } else {
                 subProject.tasks.register("assembleServicePluginZip") {
-                    subProject.logger.quiet("Not a java lib..........")
+                    subProject.logger.quiet("Not a java lib. This task does nothing!")
                 }
             }
         }
