@@ -24,8 +24,6 @@ plugins {
     id("org.jetbrains.kotlin.jvm").version("1.3.31")
 }
 
-group = "com.netflix.spinnaker.gradle.extension"
-version = "1.0"
 
 repositories {
     jcenter()
