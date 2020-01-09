@@ -16,20 +16,10 @@
 
 
 plugins {
-    // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
-    `java-gradle-plugin`
-    `maven-publish`
-
     // Apply the Kotlin JVM plugin to add support for Kotlin.
     id("org.jetbrains.kotlin.jvm").version("1.3.31")
 }
 
-
-repositories {
-    jcenter()
-    maven("https://plugins.gradle.org/m2/")
-
-}
 
 dependencies {
     // Kotlin JDK 8 standard library.
@@ -68,14 +58,3 @@ val check by tasks.getting(Task::class) {
     dependsOn(functionalTest)
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "com.netflix.spinnaker.gradle.extension"
-            artifactId = "spinnaker-extension-plugin"
-            version = "1.0"
-
-            from(components["java"])
-        }
-    }
-}
