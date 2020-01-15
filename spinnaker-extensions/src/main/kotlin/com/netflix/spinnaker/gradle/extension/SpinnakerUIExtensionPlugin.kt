@@ -22,7 +22,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Zip
 
 /**
- * Gradle plugin to support spinnaker service plugin bundling aspects.
+ * Gradle plugin to support spinnaker UI plugin bundling aspects.
  */
 class SpinnakerUIExtensionPlugin : Plugin<Project> {
 
