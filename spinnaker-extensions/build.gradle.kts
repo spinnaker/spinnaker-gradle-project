@@ -34,9 +34,19 @@ dependencies {
 
 gradlePlugin {
     // Define the plugin
-    val spinnakerextension by plugins.creating {
-        id = "com.netflix.spinnaker.gradle.extension.spinnakerextension"
-        implementationClass = "com.netflix.spinnaker.gradle.extension.SpinnakerExtensionPlugin"
+    val spinnakerserviceextension by plugins.creating {
+        id = "com.netflix.spinnaker.gradle.extension.spinnakerserviceextension"
+        implementationClass = "com.netflix.spinnaker.gradle.extension.SpinnakerServiceExtensionPlugin"
+    }
+
+    val spinnakeruiextension by plugins.creating {
+        id = "com.netflix.spinnaker.gradle.extension.spinnakeruiextension"
+        implementationClass = "com.netflix.spinnaker.gradle.extension.SpinnakerUIExtensionPlugin"
+    }
+
+    val spinnakerextensionsbundler by plugins.creating {
+        id = "com.netflix.spinnaker.gradle.extension.spinnakerextensionsbundler"
+        implementationClass = "com.netflix.spinnaker.gradle.extension.SpinnakerExtensionsBundlerPlugin"
     }
 }
 
