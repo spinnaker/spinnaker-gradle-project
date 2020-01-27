@@ -18,6 +18,8 @@ package com.netflix.spinnaker.gradle.extension
 import org.gradle.api.Project
 
 object Plugins {
+  const val PF4J_VERSION = "3.2.0"
+
   const val GROUP = "Spinnaker Plugins"
 
   const val BUNDLE_PLUGINS_TASK_NAME = "bundlePlugins"

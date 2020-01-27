@@ -24,24 +24,26 @@ import com.netflix.spinnaker.gradle.extension.tasks.RegistrationTask
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.DependencyResolutionListener
+import org.gradle.api.artifacts.ResolvableDependencies
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 import java.io.File
 import java.lang.IllegalStateException
+import java.net.URL
 
 /**
  * Gradle plugin to support spinnaker service plugin bundling aspects.
- *
- * TODO(rz): Add spinnaker bintray to repositories
- * TODO(rz): Configure plugin manifest
- * TODO(rz): Auto-add `annotationProcessor "org.pf4j:pf4j:3.2.0"`
  */
 class SpinnakerServiceExtensionPlugin : Plugin<Project> {
 
   override fun apply(project: Project) {
-    project.plugins.apply(JavaPlugin::class.java)
+    if (!project.plugins.hasPlugin(JavaPlugin::class.java)) {
+      project.plugins.apply(JavaPlugin::class.java)
+    }
+
     project.extensions.create("spinnakerPlugin", SpinnakerPluginExtension::class.java)
     project.tasks.register(ASSEMBLE_PLUGIN_TASK_NAME, AssembleJavaPluginZipTask::class.java)
 
@@ -49,6 +51,21 @@ class SpinnakerServiceExtensionPlugin : Plugin<Project> {
       .doFirst {
         (it as Jar).createPluginManifest(project)
       }
+
+    // Add the Spinnaker bintray repository
+    project.repositories.add(project.repositories.maven {
+      it.url = URL("https://dl.bintray.com/spinnaker/spinnaker/").toURI()
+    })
+
+    // Add the PF4J annotation processor to the dependencies
+    project.gradle.addListener(object : DependencyResolutionListener {
+      override fun beforeResolve(dependencies: ResolvableDependencies) {
+        val compileDeps = project.configurations.getByName("annotationProcessor").dependencies
+        compileDeps.add(project.dependencies.create("org.pf4j:pf4j:${Plugins.PF4J_VERSION}"))
+      }
+
+      override fun afterResolve(dependencies: ResolvableDependencies) {}
+    })
   }
 
   private fun Jar.createPluginManifest(project: Project) {

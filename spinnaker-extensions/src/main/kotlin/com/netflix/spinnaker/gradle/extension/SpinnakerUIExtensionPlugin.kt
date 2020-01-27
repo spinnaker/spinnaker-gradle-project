@@ -41,14 +41,12 @@ class SpinnakerUIExtensionPlugin : Plugin<Project> {
     project.tasks.create(ASSEMBLE_PLUGIN_TASK_NAME, AssembleUIPluginTask::class.java)
     project.tasks.create("buildUi", BuildUIExtensionTask::class.java)
 
-    project.afterEvaluate {
-      project.tasks.getByName("build").dependsOn("buildUi")
-      project.tasks
-        .getByName("clean")
-        .dependsOn("yarn_cache_clean")
-        .doLast {
-          project.delete(project.files("${project.projectDir}/node_modules"))
-        }
-    }
+    project.tasks.getByName("build").dependsOn("buildUi")
+    project.tasks
+      .getByName("clean")
+      .dependsOn("yarn_cache_clean")
+      .doLast {
+        project.delete(project.files("${project.projectDir}/node_modules"))
+      }
   }
 }
