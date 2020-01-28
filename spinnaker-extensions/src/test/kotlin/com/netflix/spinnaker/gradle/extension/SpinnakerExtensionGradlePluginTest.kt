@@ -35,8 +35,12 @@ class SpinnakerExtensionGradlePluginTest {
     project.plugins.apply("java")
 
     val extension: SpinnakerPluginExtension? = project.extensions.findByType(SpinnakerPluginExtension::class.java)
-    extension?.serviceName = "test"
-    extension?.pluginClass = "com.netflix.spinnaker.TestPlugin"
+    assertNotNull(extension)
+
+    extension.apply {
+      this.serviceName = "test"
+      this.pluginClass = "com.netflix.spinnaker.TestPlugin"
+    }
 
     // Verify tasks exist
     assertNotNull(project.tasks.findByName(Plugins.ASSEMBLE_PLUGIN_TASK_NAME))
@@ -59,10 +63,14 @@ class SpinnakerExtensionGradlePluginTest {
     project.plugins.apply("io.spinnaker.plugin.bundler")
 
     val extension: SpinnakerBundleExtension? = project.extensions.findByType(SpinnakerBundleExtension::class.java)
-    extension?.provider = "test"
-    extension?.version = "1.0.0"
-    extension?.description = "Test Plugin"
-    extension?.pluginId = "Test"
+    assertNotNull(extension)
+
+    extension.apply {
+      this.provider = "test"
+      this.pluginId = "Test"
+      this.description = "Test Plugin"
+      this.version = "1.0.0"
+    }
 
     // Verify tasks exist
     assertNotNull(project.tasks.findByName(Plugins.RELEASE_BUNDLE_TASK_NAME))
