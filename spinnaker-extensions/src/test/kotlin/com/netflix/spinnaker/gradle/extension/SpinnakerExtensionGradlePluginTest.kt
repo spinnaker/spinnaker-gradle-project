@@ -15,45 +15,60 @@
  */
 package com.netflix.spinnaker.gradle.extension
 
+import com.netflix.spinnaker.gradle.extension.extensions.SpinnakerBundleExtension
+import com.netflix.spinnaker.gradle.extension.extensions.SpinnakerPluginExtension
 import org.gradle.testfixtures.ProjectBuilder
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
 /**
- * Unit test for the 'com.netflix.spinnaker.gradle.extension.spinnakerextension' plugin.
+ * Unit tests to verify task existence in each spinnaker extension plugin.
  */
-@Ignore
 class SpinnakerExtensionGradlePluginTest {
 
-    @Test fun `spinnakerserviceextension plugin registers task`() {
-        // Create a test project and apply the plugin
-        val project = ProjectBuilder.builder().build()
-        project.plugins.apply("io.spinnaker.plugin.service-extension")
-        project.plugins.apply("java")
+  @Test
+  fun `spinnakerserviceextension plugin registers task`() {
+    // Create a test project and apply the plugin
+    val project = ProjectBuilder.builder().build()
 
-        // Verify the result
-        assertNotNull(project.tasks.findByName("registerPlugin"))
-        assertNotNull(project.tasks.findByName("assemblePluginZip"))
-    }
+    project.plugins.apply("io.spinnaker.plugin.service-extension")
+    project.plugins.apply("java")
 
-    @Test fun `spinnakeruiextension plugin registers task`() {
-        // Create a test project and apply the plugin
-        val project = ProjectBuilder.builder().build()
-        project.plugins.apply("io.spinnaker.plugin.ui-extension")
+    val extension: SpinnakerPluginExtension? = project.extensions.findByType(SpinnakerPluginExtension::class.java)
+    extension?.serviceName = "test"
+    extension?.pluginClass = "com.netflix.spinnaker.TestPlugin"
 
-        // Verify the result
-        assertNotNull(project.tasks.findByName("registerPlugin"))
-        assertNotNull(project.tasks.findByName("assemblePluginZip"))
-    }
+    // Verify tasks exist
+    assertNotNull(project.tasks.findByName(Plugins.ASSEMBLE_PLUGIN_TASK_NAME))
+  }
 
-    @Test fun `spinnakerextensionbundler plugin registers task`() {
-        // Create a test project and apply the plugin
-        val project = ProjectBuilder.builder().build()
-        project.plugins.apply("java")
-        project.plugins.apply("io.spinnaker.plugin.bundler")
-        // Verify the result
-        assertNotNull(project.tasks.findByName("distPluginZip"))
-    }
+  @Test
+  fun `spinnakeruiextension plugin registers task`() {
+    // Create a test project and apply the plugin
+    val project = ProjectBuilder.builder().build()
+    project.plugins.apply("io.spinnaker.plugin.ui-extension")
+
+    // Verify tasks exist
+    assertNotNull(project.tasks.findByName(Plugins.ASSEMBLE_PLUGIN_TASK_NAME))
+  }
+
+  @Test
+  fun `spinnakerextensionbundler plugin registers task`() {
+    // Create a test project and apply the plugin
+    val project = ProjectBuilder.builder().build()
+    project.plugins.apply("io.spinnaker.plugin.bundler")
+
+    val extension: SpinnakerBundleExtension? = project.extensions.findByType(SpinnakerBundleExtension::class.java)
+    extension?.provider = "test"
+    extension?.version = "1.0.0"
+    extension?.description = "Test Plugin"
+    extension?.pluginId = "Test"
+
+    // Verify tasks exist
+    assertNotNull(project.tasks.findByName(Plugins.RELEASE_BUNDLE_TASK_NAME))
+    assertNotNull(project.tasks.findByName(Plugins.CHECKSUM_BUNDLE_TASK_NAME))
+    assertNotNull(project.tasks.findByName(Plugins.BUNDLE_PLUGINS_TASK_NAME))
+    assertNotNull(project.tasks.findByName(Plugins.COLLECT_PLUGIN_ZIPS_TASK_NAME))
+  }
 
 }
