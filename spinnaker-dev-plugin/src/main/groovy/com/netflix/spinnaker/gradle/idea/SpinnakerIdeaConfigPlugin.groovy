@@ -34,6 +34,7 @@ class SpinnakerIdeaConfigPlugin implements Plugin<Project> {
                     JavaPluginConvention convention = project.convention.getPlugin(JavaPluginConvention)
                     idea.model.project.jdkName = convention.sourceCompatibility
                     idea.model.project.languageLevel = convention.targetCompatibility
+                    idea.model.project.targetBytecodeVersion = convention.targetCompatibility
                 }
                 idea.model.project.vcs = 'Git'
                 idea.model.project.ipr.withXml { XmlProvider xp ->

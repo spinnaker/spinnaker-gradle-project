@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package com.netflix.spinnaker.gradle.publishing
+package com.netflix.spinnaker.gradle.project
 
-import com.netflix.spinnaker.gradle.ospackage.OspackageBintrayPublishPlugin
+import com.netflix.spinnaker.gradle.baseproject.SpinnakerBaseProjectPlugin
+import com.netflix.spinnaker.gradle.publishing.bintray.BintrayPublishPlugin
+import com.netflix.spinnaker.gradle.publishing.PublishingPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
-class SpinnakerBintrayPublishingPlugin implements Plugin<Project> {
+class SpinnakerProjectPlugin implements Plugin<Project> {
 
-    @Override
-    void apply(Project project) {
-        project.plugins.apply(OspackageBintrayPublishPlugin)
-        project.plugins.apply(SpinnakerBintrayPublishingConventionsPlugin)
-    }
+  @Override
+  void apply(Project project) {
+    project.plugins.apply(SpinnakerBaseProjectPlugin)
+    project.plugins.apply(PublishingPlugin)
+    project.plugins.apply(BintrayPublishPlugin)
+  }
 }

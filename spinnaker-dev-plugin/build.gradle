@@ -4,6 +4,7 @@ dependencies {
   compile "com.diffplug.spotless:spotless-plugin-gradle:$spotlessVersion"
   compile 'org.eclipse.jgit:org.eclipse.jgit:5.4.0.201906121030-r'
   compile 'com.netflix.nebula:gradle-java-cross-compile-plugin:4.1.0'
+  compile 'com.netflix.nebula:gradle-ospackage-plugin:8.2.0'
 }
 gradlePlugin {
     plugins {
@@ -27,9 +28,21 @@ gradlePlugin {
           id = "spinnaker.base-project"
           implementationClass = "com.netflix.spinnaker.gradle.baseproject.SpinnakerBaseProjectPlugin"
         }
+        spinnakerProject {
+          id = 'spinnaker.project'
+          implementationClass = 'com.netflix.spinnaker.gradle.project.SpinnakerProjectPlugin'
+        }
         licenseReport {
           id = "spinnaker.license-report"
-          implementationClass = "com.netflix.spinnaker.gradle.SpinnakerLicenseReportPlugin"
+          implementationClass = "com.netflix.spinnaker.gradle.license.SpinnakerLicenseReportPlugin"
+        }
+        spinnakerPackage {
+          id = 'spinnaker.package'
+          implementationClass = 'com.netflix.spinnaker.gradle.application.SpinnakerPackagePlugin'
+        }
+        spinnakerBintray {
+          id = "spinnaker.bintray"
+          implementationClass = "com.netflix.spinnaker.gradle.publishing.bintray.BintrayPublishPlugin"
         }
     }
 }
