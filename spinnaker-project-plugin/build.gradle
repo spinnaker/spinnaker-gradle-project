@@ -6,43 +6,72 @@ dependencies {
   compile 'com.netflix.nebula:gradle-java-cross-compile-plugin:4.1.0'
   compile 'com.netflix.nebula:gradle-ospackage-plugin:8.2.0'
 }
+
 gradlePlugin {
     plugins {
+        spinnakerProject {
+          id = 'io.spinnaker.project'
+          implementationClass = 'com.netflix.spinnaker.gradle.project.SpinnakerProjectPlugin'
+        }
         codeStyle {
-          id = "spinnaker.codestyle"
+          id = "io.spinnaker.codestyle"
           implementationClass = "com.netflix.spinnaker.gradle.codestyle.SpinnakerCodeStylePlugin"
         }
-        baseProjectConventions {
-          id = "spinnaker.base-project-conventions"
-          implementationClass = "com.netflix.spinnaker.gradle.baseproject.SpinnakerBaseProjectConventionsPlugin"
-        }
         ideaConfig {
-          id = "spinnaker.ideaconfig"
+          id = "io.spinnaker.ideaconfig"
           implementationClass = "com.netflix.spinnaker.gradle.idea.SpinnakerIdeaConfigPlugin"
         }
         application {
-          id = "spinnaker.application"
+          id = "io.spinnaker.application"
           implementationClass = "com.netflix.spinnaker.gradle.application.SpinnakerApplicationPlugin"
         }
         baseProject {
-          id = "spinnaker.base-project"
+          id = "io.spinnaker.base-project"
           implementationClass = "com.netflix.spinnaker.gradle.baseproject.SpinnakerBaseProjectPlugin"
         }
-        spinnakerProject {
-          id = 'spinnaker.project'
-          implementationClass = 'com.netflix.spinnaker.gradle.project.SpinnakerProjectPlugin'
-        }
         licenseReport {
-          id = "spinnaker.license-report"
+          id = "io.spinnaker.license-report"
           implementationClass = "com.netflix.spinnaker.gradle.license.SpinnakerLicenseReportPlugin"
         }
         spinnakerPackage {
-          id = 'spinnaker.package'
+          id = 'io.spinnaker.package'
           implementationClass = 'com.netflix.spinnaker.gradle.application.SpinnakerPackagePlugin'
         }
         spinnakerBintray {
-          id = "spinnaker.bintray"
+          id = "io.spinnaker.bintray"
           implementationClass = "com.netflix.spinnaker.gradle.publishing.bintray.BintrayPublishPlugin"
         }
     }
 }
+
+pluginBundle {
+  website = 'https://spinnaker.io'
+  vcsUrl = 'https://github.com/spinnaker/spinnaker-gradle-project'
+  description = 'Plugins for Spinnaker services'
+  tags = ['spinnaker']
+
+  plugins {
+        spinnakerProject {
+description = 'Build configuration for Spinnaker projects'
+        }
+        codeStyle {
+description = 'Spinnaker project codestyle plugin'
+        }
+        ideaConfig {
+description = 'Spinnaker project IDE configuration for IntelliJ'
+        }
+        application {
+description = 'Application plugin configuration for Spinnaker services'
+        }
+        licenseReport {
+description = 'License reporting for Spinnaker projects'
+        }
+        spinnakerPackage {
+description = 'OS Packaging for Spinnaker applications'
+        }
+        spinnakerBintray {
+description = 'Bintray publishing configuration for Spinnaker projects'
+        }
+  }
+}
+

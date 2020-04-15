@@ -1,4 +1,4 @@
 rootProject.name = 'spinnaker-gradle'
 
-include 'spinnaker-dev-plugin'
+include 'spinnaker-project-plugin'
 include 'spinnaker-extensions'

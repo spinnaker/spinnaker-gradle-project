@@ -1,5 +1,6 @@
 plugins {
   id "com.diffplug.gradle.spotless" version "3.27.2" apply false
+  id "com.gradle.plugin-publish" version "0.11.0" apply false
 }
 
 subprojects {
@@ -11,7 +12,9 @@ subprojects {
   apply plugin: 'com.diffplug.gradle.spotless'
   apply plugin: 'groovy'
   apply plugin: 'java-gradle-plugin'
+  apply plugin: 'com.gradle.plugin-publish'
   apply plugin: 'maven-publish'
+  
 
   spotless {
     java {
@@ -19,22 +22,7 @@ subprojects {
     }
   }
 
-  publishing {
-    repositories {
-      maven {
-        name = 'localdir'
-        url = 'file:///Users/cfieber/tmp/mvnrepo'
-        /*
-        credentials {
-          username = 'foo'
-          password = 'bar'
-        }
-         */
-      }
-    }
-  }
-
-  group = 'com.netflix.spinnaker.gradle'
+  group = 'io.spinnaker.gradle'
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
 
