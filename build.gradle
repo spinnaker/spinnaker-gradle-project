@@ -15,24 +15,6 @@ subprojects {
   apply plugin: 'com.gradle.plugin-publish'
   apply plugin: 'maven-publish'
 
-  publishing {
-    repositories  {
-      maven {
-        name = 'tmpdir'
-        url = 'file:///Users/cfieber/tmp/spinnaker-gradle-repo'
-      }
-      maven {
-        name = 'bintray'
-        url = "https://api.bintray.com/maven/cfieber/buildtestrepo/gradle-plugins"
-        credentials {
-          username = bintrayUser
-          password = bintrayKey
-        }
-      }
-    }
-  }
-
-
   spotless {
     java {
       eclipse().configFile(rootProject.file('codestyle.xml'))
