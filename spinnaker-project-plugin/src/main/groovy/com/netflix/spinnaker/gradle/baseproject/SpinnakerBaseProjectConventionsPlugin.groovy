@@ -1,5 +1,6 @@
 package com.netflix.spinnaker.gradle.baseproject
 
+import com.netflix.spinnaker.gradle.Flags
 import groovy.transform.CompileStatic
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -18,6 +19,10 @@ import org.gradle.jvm.tasks.Jar
 class SpinnakerBaseProjectConventionsPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
+      if (project.version == Project.DEFAULT_VERSION) {
+        project.version = Flags.DEFAULT_VERSION_WHEN_UNSPECIFIED
+      }
+
       project.plugins.withType(JavaBasePlugin) {
         project.plugins.apply(MavenPublishPlugin)
         project.repositories.jcenter()

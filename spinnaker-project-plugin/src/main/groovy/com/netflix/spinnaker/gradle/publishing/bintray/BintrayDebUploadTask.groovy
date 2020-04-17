@@ -1,36 +1,31 @@
 package com.netflix.spinnaker.gradle.publishing.bintray
 
-import com.netflix.gradle.plugins.deb.Deb
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
-
-import javax.inject.Inject
 
 class BintrayDebUploadTask extends DefaultTask {
 
-  @Inject
-  BintrayDebUploadTask(Deb deb) {
-    super()
-    this.deb = deb
-    dependsOn(deb)
-  }
+  @Input
+  Provider<String> publishUri
 
-  private Deb deb
+  @InputFile
+  Provider<RegularFile> archiveFile
 
   @TaskAction
   void uploadDeb() {
     def extension = project.extensions.getByType(BintrayPublishExtension)
-    def uri = extension.getDebPublishUri(deb)
-    def file = deb.getArchiveFile().get().asFile
+    def url = publishUri.get().toURL()
+    def file = archiveFile.get().asFile
     def contentLength = file.size()
-    project.logger.info("Uploading $file to $uri")
-    HttpURLConnection con = (HttpURLConnection) extension
-      .getDebPublishUri(deb)
-      .toURL()
-      .openConnection()
+    project.logger.info("Uploading $file to $url")
+    HttpURLConnection con = (HttpURLConnection) url.openConnection()
     con.doOutput = true
     con.requestMethod = 'PUT'
-    con.addRequestProperty('Authorization', extension.getBasicAuthHeader())
+    con.addRequestProperty('Authorization', extension.basicAuthHeader())
     con.setRequestProperty('Content-Type', 'application/octet-stream')
     con.setRequestProperty('Content-Length', "$contentLength")
     con.getOutputStream().withCloseable { OutputStream os ->

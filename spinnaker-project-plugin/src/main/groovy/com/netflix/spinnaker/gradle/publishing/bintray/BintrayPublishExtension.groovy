@@ -2,150 +2,173 @@ package com.netflix.spinnaker.gradle.publishing.bintray
 
 import com.netflix.gradle.plugins.deb.Deb
 import org.gradle.api.Project
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 
 class BintrayPublishExtension {
+  private final Project project
+
+  final Property<Boolean> enabled
+
+  final Property<Boolean> jarEnabled
+  final Property<Boolean> debEnabled
+
+  final Property<String> bintrayOrg
+  final Property<String> bintrayJarRepo
+  final Property<String> bintrayJarPackage
+
+  final Property<String> bintrayDebRepo
+
+  final Property<String> debDistribution
+  final Property<String> debComponent
+  final Property<String> debArchitectures
+  final Property<String> debBuildNumber
+  final Property<Integer> publishWaitForSecs
 
   BintrayPublishExtension(Project project) {
     this.project = project
-    if (project.findProperty("bintrayOrg")) {
-      this.bintrayOrg = project.property("bintrayOrg")
-    }
-    if (project.findProperty("bintrayPublishEnabled")) {
-      this.enabled = Boolean.valueOf(project.property("bintrayPublishEnabled").toString())
-    }
-    if (project.findProperty("bintrayPublishJarEnabled")) {
-      this.jarEnabled = Boolean.valueOf(project.property("bintrayJarPublish").toString())
-    }
+    ObjectFactory props = project.objects
+    enabled = props.property(Boolean).convention(true)
+    jarEnabled = props.property(Boolean).convention(true)
+    debEnabled = props.property(Boolean).convention(true)
+    bintrayOrg = props.property(String).convention("spinnaker")
+    bintrayJarRepo = props.property(String).convention("spinnaker")
+    bintrayJarPackage = props.property(String).convention(project.rootProject.name)
+
+    bintrayDebRepo = props.property(String).convention("debians")
+    debDistribution = props.property(String).convention("trusty,xenial,bionic")
+    debComponent = props.property(String).convention("spinnaker")
+    debArchitectures = props.property(String).convention( "i386,amd64")
+    debBuildNumber = props.property(String)
+    publishWaitForSecs = props.property(Integer)
   }
 
-  Project project
-
-  boolean enabled = true
-
-  Boolean jarEnabled
-  Boolean debEnabled
-
-  String bintrayOrg = 'cfieber' //spinnaker
-  String bintrayJarRepo = 'buildtestrepo' //spinnaker
-  String bintrayJarPackage = null
-
-  String bintrayDebRepo = 'debtestrepo' //debians
-
-  String debDistribution = 'trusty'
-  String debComponent = 'spinnaker'
-  String debArchitectures = 'i386,amd64'
-  String debBuildNumber = ''
-  Integer publishWaitForSecs
+  //------------------------------------------------------------------------
+  //
+  // Note the following accessor methods do not follow the java getter style
+  // because the Gradle lazy properties generate getter and setter methods
+  // for each property, but we want a customized getter behavior in most
+  // cases to allow a project property to override the value from build
+  // configuration
+  //
+  //------------------------------------------------------------------------
 
 
-  private <T> T prop(Class<T> type, String prop, T defaultValue) {
-    Object value = project.findProperty(prop)
-    if (value == null) {
-      return defaultValue
-    }
-    return value.asType(type)
+  Provider<Boolean> enabled() {
+    return withSysProp(enabled, Boolean, "bintrayPublishEnabled")
   }
 
-  boolean getEnabled() {
-    return prop(Boolean, "bintrayPublishEnabled", enabled)
+  Provider<Boolean> jarEnabled() {
+    return withSysProp(jarEnabled, Boolean, "bintrayPublishJarEnabled")
   }
 
-  boolean getJarEnabled() {
-    return getEnabled() && prop(Boolean, "bintrayPublishJarEnabled", jarEnabled != null ? jarEnabled : true)
+  Provider<Boolean> debEnabled() {
+    return withSysProp(debEnabled, Boolean, "bintrayPublishDebEnabled")
   }
 
-  boolean getDebEnabled() {
-    return getEnabled() && prop(Boolean, "bintrayPublishDebEnabled", debEnabled != null ? debEnabled : true)
+  Provider<String> bintrayOrg() {
+    return withSysProp(bintrayOrg, String, "bintrayOrg")
   }
 
-  String getBintrayOrg() {
-    return prop(String, "bintrayPublishOrg", bintrayOrg ?: getBintrayUser())
+  Provider<String> bintrayJarRepo() {
+    return withSysProp(bintrayJarRepo, String, "bintrayJarRepo")
   }
 
-  String getBintrayJarRepo() {
-    return prop(String, "bintrayJarRepo", bintrayJarRepo)
+  Provider<String> bintrayJarPackage() {
+    return withSysProp(bintrayJarPackage, String, "bintrayJarPackage")
   }
 
-  String getBintrayJarPackage() {
-    return prop(String, "bintrayJarPackage", bintrayJarPackage == null ? project.rootProject.name : bintrayJarPackage)
+  Provider<String> bintrayDebRepo() {
+    return withSysProp(bintrayDebRepo, String, "bintrayPackageRepo")
   }
 
-  String getBintrayUser() {
-    return prop(String, "bintrayUser", null)
+  Provider<String> debDistribution() {
+    return withSysProp(debDistribution, String, "bintrayPackageDebDistribution")
   }
 
-  String getBintrayKey() {
-    return prop(String, "bintrayKey", null)
-  }
-
-  String getBasicAuthHeader() {
-    "Basic " + "${getBintrayUser()}:${getBintrayKey()}".getBytes('UTF-8').encodeBase64()
-  }
-
-  String getBintrayDebRepo() {
-    return prop(String, "bintrayPackageRepo", bintrayDebRepo)
-  }
-
-  String getDebDistribution() {
-    return prop(String, "bintrayPackageDebDistribution", debDistribution)
-  }
-
-  String getDebComponent() {
+  Provider<String> debComponent() {
     return debComponent
   }
 
-  String getDebArchitectures() {
+  Provider<String> debArchitectures() {
     return debArchitectures
   }
 
-  String getDebBuildNumber() {
-    return prop(String, "bintrayPackageBuildNumber", debBuildNumber)
+  String bintrayUser() {
+    return projectProperty(String, "bintrayUser")
   }
 
-  Integer getPublishWaitForSecs() {
-    return prop(Integer, "bintrayPublishWaitForSecs", publishWaitForSecs == null ? 0 : publishWaitForSecs)
+  String bintrayKey() {
+    return projectProperty(String, "bintrayKey")
   }
 
   boolean hasCreds() {
-    getBintrayUser() && getBintrayKey()
+    return bintrayUser() && bintrayKey()
   }
 
-  boolean shouldPublishJar() {
-    return shouldPublish("jar", this.&getJarEnabled)
+  String basicAuthHeader() {
+    "Basic " + "${bintrayUser()}:${bintrayKey()}".getBytes('UTF-8').encodeBase64()
   }
 
-  String getJarPublishUri() {
-    return "https://api.bintray.com/maven/${getBintrayOrg()}/${getBintrayJarRepo()}/${getBintrayJarPackage()}/;publish=1"
-  }
-
-  String getDebPublishUri(Deb deb) {
-    def packageName = deb.packageName
-    def poolPath = "pool/main/${packageName.charAt(0)}/$packageName"
-    def debFileName = deb.archiveFile.get().getAsFile().name
-    String versionName = project.version.toString()
-    if (versionName.endsWith('-SNAPSHOT')) {
-      versionName = versionName.replaceAll(/SNAPSHOT/, Long.toString(System.currentTimeMillis()))
+  Provider<String> jarPublishUri() {
+    return bintrayOrg().flatMap { String org ->
+      bintrayJarRepo().flatMap { String repo ->
+        bintrayJarPackage().map { String pkg ->
+          "https://api.bintray.com/maven/$org/$repo/$pkg/;publish=1".toString()
+        }
+      }
     }
-
-    return "https://api.bintray.com/content/${getBintrayOrg()}/${getBintrayDebRepo()}/$packageName/$versionName/$poolPath/$debFileName;deb_distribution=${getDebDistribution()};deb_component=${getDebComponent()};deb_architecture=${getDebArchitectures()};publish=1"
   }
 
-  private boolean shouldPublish(String type, Closure<Boolean> enabledCheck) {
-    boolean publish = true
-    if (!enabledCheck()) {
-      publish = false
-      project.logger.info("not publishing $type for project $project.name, bintrayPublishEnabled: ${getEnabled()}, ${type}Enabled: ${enabledCheck()}")
-    }
+  Provider<String> debPublishUri(TaskProvider<Deb> debTaskProvider) {
+    return debTaskProvider.flatMap { Deb deb ->
+      deb.archiveFile.flatMap { debFile ->
+        bintrayOrg().flatMap { String org ->
+          bintrayDebRepo().flatMap { String repo ->
+            debDistribution().flatMap { String dist ->
+              debComponent().flatMap { String component ->
+                debArchitectures().map { String arch ->
+                  def packageName = deb.packageName
+                  def poolPath = "pool/main/${packageName.charAt(0)}/$packageName"
+                  def debFileName = debFile.getAsFile().name
+                  String versionName = project.version.toString()
+                  if (versionName.endsWith('-SNAPSHOT')) {
+                    versionName = versionName.replaceAll(/SNAPSHOT/, Long.toString(System.currentTimeMillis()))
+                  }
 
-    if (!hasCreds()) {
-      publish = false
-      project.logger.info("not publishing $type for project $project.name, ensure bintrayUser and bintrayKey properties are set")
+                  return "https://api.bintray.com/content/$org/$repo/$packageName/$versionName/$poolPath/$debFileName;deb_distribution=$dist;deb_component=$component;deb_architecture=$arch;publish=1".toString()
+                }
+              }
+            }
+          }
+        }
+      }
     }
-
-    return publish
   }
 
-  boolean shouldPublishDeb() {
-    return shouldPublish("deb", this.&getDebEnabled)
+  //------------------------------------------------------------------------
+  //
+  // Note the following utility methods are protected rather than private
+  // because the Gradle lazy properties generate some dynamic subclass that
+  // needs visibility into these methods.
+  //
+  //------------------------------------------------------------------------
+  protected <T> Provider<T> withSysProp(Property<T> property, Class<T> type, String projectPropertyName) {
+    return property.map { T value ->
+      return projectProperty(type, projectPropertyName, value)
+    }
+  }
+
+  protected <T> T projectProperty(Class<T> type, String projectPropertyName) {
+    return projectProperty(type, projectPropertyName, null)
+  }
+
+  protected <T> T projectProperty(Class<T> type, String projectPropertyName, T defaultValue) {
+    if (project.hasProperty(projectPropertyName)) {
+      return project.property(projectPropertyName).asType(type)
+    }
+    return defaultValue
   }
 }

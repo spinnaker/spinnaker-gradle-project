@@ -10,17 +10,12 @@ subprojects {
 
   apply plugin: 'com.diffplug.gradle.spotless'
   apply plugin: 'groovy'
+  apply plugin: 'idea'
   apply plugin: 'java-gradle-plugin'
   apply plugin: 'com.gradle.plugin-publish'
   apply plugin: 'maven-publish'
 
   publishing {
-    publications {
-      spinnakerPlugin(MavenPublication) {
-        from components.java
-      }
-    }
-
     repositories  {
       maven {
         name = 'tmpdir'
