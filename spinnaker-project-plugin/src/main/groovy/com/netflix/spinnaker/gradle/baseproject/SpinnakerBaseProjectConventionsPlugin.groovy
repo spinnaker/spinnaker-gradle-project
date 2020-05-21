@@ -46,7 +46,7 @@ class SpinnakerBaseProjectConventionsPlugin implements Plugin<Project> {
     }
 
   private static void setImplementationVersion(Jar jar, Project project) {
-    def version = project.getVersion()
+    def version = project.findProperty("ossVersion") ?: project.getVersion()
     if (version != Project.DEFAULT_VERSION) {
       jar.manifest {
         (it as Manifest).attributes(["Implementation-Version": version.toString()])
