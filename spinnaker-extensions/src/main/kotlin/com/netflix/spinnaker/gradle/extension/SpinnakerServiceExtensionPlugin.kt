@@ -60,11 +60,11 @@ class SpinnakerServiceExtensionPlugin : Plugin<Project> {
 
     val attributes = mutableMapOf<String, String>()
 
-    val rootProjectVersion = removeTagPrefix(project.rootProject.version.toString())
+    val pluginVersion = removeTagPrefix(bundleExt.version, project)
 
     applyAttributeIfSet(attributes, "Plugin-Class", pluginExt.pluginClass)
     applyAttributeIfSet(attributes, "Plugin-Id", bundleExt.pluginId)
-    applyAttributeIfSet(attributes, "Plugin-Version", if (isVersionSpecified(bundleExt.version)) bundleExt.version else rootProjectVersion)
+    applyAttributeIfSet(attributes, "Plugin-Version", pluginVersion)
     applyAttributeIfSet(attributes, "Plugin-Dependencies", pluginExt.dependencies)
     applyAttributeIfSet(attributes, "Plugin-Requires", pluginExt.requires)
     applyAttributeIfSet(attributes, "Plugin-Description", bundleExt.description)
@@ -106,11 +106,9 @@ class SpinnakerServiceExtensionPlugin : Plugin<Project> {
   }
 
   //the plugin version is supplied with a v from tag, but fails when update manager compares versions
-  private fun removeTagPrefix(version: String): String {
-    if (version.startsWith("v")) {
-      return version.removePrefix("v")
-    }
-    return version
+  private fun removeTagPrefix(bundleVersion: String, project: Project): String {
+    val version = if (isVersionSpecified(bundleVersion)) bundleVersion else project.rootProject.version.toString()
+    return version.removePrefix("v")
   }
 
   private fun isVersionSpecified(version: String): Boolean {
