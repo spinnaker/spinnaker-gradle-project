@@ -19,15 +19,14 @@ import java.util.List;
  */
 final class ArtifactRegistryAlphaClient extends ArtifactRegistry {
 
-  public ArtifactRegistryAlphaClient(
-      HttpTransport transport,
-      JsonFactory jsonFactory,
-      HttpRequestInitializer httpRequestInitializer) {
+  public ArtifactRegistryAlphaClient(HttpTransport transport,
+                                     JsonFactory jsonFactory,
+                                     HttpRequestInitializer httpRequestInitializer) {
     super(transport, jsonFactory, httpRequestInitializer);
   }
 
-  ImportArtifacts importArtifacts(
-      String project, String location, String repository, String... gcsUris) throws IOException {
+  ImportArtifacts importArtifacts(String project, String location, String repository, String... gcsUris)
+    throws IOException {
     ImportArtifacts result = new ImportArtifacts(this, project, location, repository, gcsUris);
     initialize(result);
     return result;
@@ -37,23 +36,20 @@ final class ArtifactRegistryAlphaClient extends ArtifactRegistry {
 
     private static final String REST_PATH = "v1alpha1/{+parent}:import";
 
-    @Key private String parent;
+    @Key
+    private String parent;
 
-    ImportArtifacts(
-        ArtifactRegistryAlphaClient client,
-        String project,
-        String location,
-        String repository,
-        String... gcsUris) {
+    ImportArtifacts(ArtifactRegistryAlphaClient client,
+                    String project,
+                    String location,
+                    String repository,
+                    String... gcsUris) {
       super(
-          client,
-          "POST",
-          REST_PATH,
-          new ImportArtifactsRequest()
-              .setGcsSource(new GcsSource().setUris(ImmutableList.copyOf(gcsUris))),
-          Operation.class);
-      this.parent =
-          String.format("projects/%s/locations/%s/repositories/%s", project, location, repository);
+        client, "POST", REST_PATH, new ImportArtifactsRequest().setGcsSource(
+          new GcsSource().setUris(ImmutableList.copyOf(gcsUris))
+        ), Operation.class
+      );
+      this.parent = String.format("projects/%s/locations/%s/repositories/%s", project, location, repository);
     }
 
     public String getParent() {
@@ -68,7 +64,8 @@ final class ArtifactRegistryAlphaClient extends ArtifactRegistry {
 
   static final class ImportArtifactsRequest extends GenericJson {
 
-    @Key private GcsSource gcsSource;
+    @Key
+    private GcsSource gcsSource;
 
     public GcsSource getGcsSource() {
       return gcsSource;
@@ -82,7 +79,8 @@ final class ArtifactRegistryAlphaClient extends ArtifactRegistry {
 
   static final class GcsSource extends GenericJson {
 
-    @Key private List<String> uris;
+    @Key
+    private List<String> uris;
 
     public List<String> getUris() {
       return uris;

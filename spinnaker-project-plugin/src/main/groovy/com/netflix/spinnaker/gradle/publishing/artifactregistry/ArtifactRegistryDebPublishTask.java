@@ -104,8 +104,8 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
       throw new IOException("Operation timed out importing debian package to Artifact Registry.");
     } else if (getErrors(importOperation) != null) {
       throw new IOException(
-          "Received an error importing debian package to Artifact Registry: "
-              + getErrors(importOperation));
+        "Received an error importing debian package to Artifact Registry: " + getErrors(importOperation)
+      );
     }
   }
 
@@ -120,38 +120,31 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
   /**
    * Import the blob into Artifact Registry and return an Operation representing the import.
    *
-   * <p>If the Operation is not done, that means we timed out before finishing the import. The
-   * operation should also be checked for errors.
+   * <p>
+   * If the Operation is not done, that means we timed out before finishing the import. The operation
+   * should also be checked for errors.
    */
   @NotNull
-  private Operation importDebToArtifactRegistry(BlobId blobId)
-      throws GeneralSecurityException, IOException, InterruptedException {
+  private Operation importDebToArtifactRegistry(BlobId blobId) throws GeneralSecurityException, IOException,
+    InterruptedException {
 
-    ArtifactRegistryAlphaClient artifactRegistryClient =
-        new ArtifactRegistryAlphaClient(
-            GoogleNetHttpTransport.newTrustedTransport(),
-            JacksonFactory.getDefaultInstance(),
-            new HttpCredentialsAdapter(new DefaultCredentialProvider().getCredential()));
+    ArtifactRegistryAlphaClient artifactRegistryClient = new ArtifactRegistryAlphaClient(
+      GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), new HttpCredentialsAdapter(
+        new DefaultCredentialProvider().getCredential()
+      )
+    );
 
-    Operation operation =
-        artifactRegistryClient
-            .importArtifacts(
-                repoProject.get(),
-                location.get(),
-                repository.get(),
-                String.format("gs://%s/%s", blobId.getBucket(), blobId.getName()))
-            .execute();
+    Operation operation = artifactRegistryClient.importArtifacts(
+      repoProject.get(),
+      location.get(),
+      repository.get(),
+      String.format("gs://%s/%s", blobId.getBucket(), blobId.getName())
+    ).execute();
 
     Stopwatch timer = Stopwatch.createStarted();
     while (!operationIsDone(operation) && !operationTimedOut(timer)) {
       Thread.sleep(1000);
-      operation =
-          artifactRegistryClient
-              .projects()
-              .locations()
-              .operations()
-              .get(operation.getName())
-              .execute();
+      operation = artifactRegistryClient.projects().locations().operations().get(operation.getName()).execute();
     }
 
     return operation;
@@ -161,7 +154,7 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
     BlobId blobId = BlobId.of(uploadBucket.get(), archiveFile.get().getAsFile().getName());
     BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
     try (ByteChannel fileChannel = Files.newByteChannel(archiveFile.get().getAsFile().toPath());
-        WritableByteChannel gcsChannel = storage.writer(blobInfo)) {
+      WritableByteChannel gcsChannel = storage.writer(blobInfo)) {
       ByteStreams.copy(fileChannel, gcsChannel);
     }
     return blobId;
