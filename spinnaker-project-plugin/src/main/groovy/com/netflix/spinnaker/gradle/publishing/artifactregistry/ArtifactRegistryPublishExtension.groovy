@@ -24,6 +24,8 @@ class ArtifactRegistryPublishExtension {
 
   final Property<String> aptTempGcsBucket
 
+  final Property<Integer> aptImportTimeoutSeconds;
+
   ArtifactRegistryPublishExtension(Project project) {
     this.project = project
     ObjectFactory props = project.objects
@@ -37,6 +39,7 @@ class ArtifactRegistryPublishExtension {
     aptLocation = props.property(String).convention("us")
     aptRepository = props.property(String).convention("apt")
     aptTempGcsBucket = props.property(String).convention("spinnaker-deb-temp-uploads")
+    aptImportTimeoutSeconds = props.property(Integer).convention(60)
   }
 
   Provider<Boolean> enabled() {
@@ -87,6 +90,10 @@ class ArtifactRegistryPublishExtension {
 
   Provider<String> aptTempGcsBucket() {
     return withSysProp(aptTempGcsBucket, String, "artifactRegistryAptTempGcsBucket")
+  }
+
+  Provider<Integer> aptImportTimeoutSeconds() {
+    return withSysProp(aptImportTimeoutSeconds, Integer, "artifactRegistryAptImportTimeoutSeconds")
   }
 
   //------------------------------------------------------------------------

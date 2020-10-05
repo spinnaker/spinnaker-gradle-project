@@ -10,12 +10,14 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.StorageOptions;
+import com.google.common.base.Stopwatch;
 import com.google.common.io.ByteStreams;
 import java.io.IOException;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.RegularFile;
@@ -24,19 +26,15 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class ArtifactRegistryDebPublishTask extends DefaultTask {
-
-  private static final Logger logger =
-      LoggerFactory.getLogger(ArtifactRegistryDebPublishTask.class);
 
   private Provider<String> uploadBucket;
   private Provider<String> repoProject;
   private Provider<String> location;
   private Provider<String> repository;
   private Provider<RegularFile> archiveFile;
+  private Provider<Integer> aptImportTimeoutSeconds;
 
   @Inject
   public ArtifactRegistryDebPublishTask() {}
@@ -77,6 +75,14 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
     this.repository = repository;
   }
 
+  public Provider<Integer> getAptImportTimeoutSeconds() {
+    return aptImportTimeoutSeconds;
+  }
+
+  public void setAptImportTimeoutSeconds(Provider<Integer> aptImportTimeout) {
+    this.aptImportTimeoutSeconds = aptImportTimeout;
+  }
+
   @InputFile
   public Provider<RegularFile> getArchiveFile() {
     return archiveFile;
@@ -94,10 +100,12 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
 
     deleteDebFromGcs(storage, blobId);
 
-    if (importOperation.getResponse().get("errors") != null) {
+    if (!operationIsDone(importOperation)) {
+      throw new IOException("Operation timed out importing debian package to Artifact Registry.");
+    } else if (getErrors(importOperation) != null) {
       throw new IOException(
           "Received an error importing debian package to Artifact Registry: "
-              + importOperation.getResponse().get("errors"));
+              + getErrors(importOperation));
     }
   }
 
@@ -105,10 +113,16 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
     try {
       storage.delete(blobId);
     } catch (StorageException e) {
-      logger.warn("Error deleting deb from temp GCS storage", e);
+      getProject().getLogger().warn("Error deleting deb from temp GCS storage", e);
     }
   }
 
+  /**
+   * Import the blob into Artifact Registry and return an Operation representing the import.
+   *
+   * <p>If the Operation is not done, that means we timed out before finishing the import. The
+   * operation should also be checked for errors.
+   */
   @NotNull
   private Operation importDebToArtifactRegistry(BlobId blobId)
       throws GeneralSecurityException, IOException, InterruptedException {
@@ -128,8 +142,9 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
                 String.format("gs://%s/%s", blobId.getBucket(), blobId.getName()))
             .execute();
 
-    while (!Boolean.TRUE.equals(operation.getDone())) {
-      Thread.sleep(100);
+    Stopwatch timer = Stopwatch.createStarted();
+    while (!operationIsDone(operation) && !operationTimedOut(timer)) {
+      Thread.sleep(1000);
       operation =
           artifactRegistryClient
               .projects()
@@ -139,7 +154,6 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
               .execute();
     }
 
-    System.out.printf("OPERATION: %s\n", operation);
     return operation;
   }
 
@@ -151,5 +165,18 @@ class ArtifactRegistryDebPublishTask extends DefaultTask {
       ByteStreams.copy(fileChannel, gcsChannel);
     }
     return blobId;
+  }
+
+  /** Checks for done, correctly handling a null result. */
+  private boolean operationIsDone(Operation operation) {
+    return Boolean.TRUE.equals(operation.getDone());
+  }
+
+  private boolean operationTimedOut(Stopwatch timer) {
+    return timer.elapsed(TimeUnit.SECONDS) > aptImportTimeoutSeconds.get();
+  }
+
+  private Object getErrors(Operation operation) {
+    return operation.getResponse().get("errors");
   }
 }
