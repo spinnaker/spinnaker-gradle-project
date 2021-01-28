@@ -31,6 +31,10 @@ class BintrayCreateVersionTask extends DefaultTask {
     def response = http.response
     project.logger.info("Create Version request finished with status $response.responseCode: $response.statusLine")
     project.logger.info("Create Version response:\n$response.responseBody")
+    if (response.statusLine == '409') {
+      project.logger.warn("Bintray rejected the new version because it already exists, continuing...")
+      return
+    }
     response.throwIfFailed("create version $project.version")
   }
 }
