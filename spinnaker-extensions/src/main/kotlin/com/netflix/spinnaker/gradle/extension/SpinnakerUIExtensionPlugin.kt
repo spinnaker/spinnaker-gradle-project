@@ -56,7 +56,10 @@ class SpinnakerUIExtensionPlugin : Plugin<Project> {
     }
 
     project.afterEvaluate {
-      project.tasks.getByName("build").dependsOn("yarn", "yarnBuild")
+      project.tasks.getByName("build") {
+        dependsOn("yarn", "yarnBuild", "yarnModules")
+        tasks.findByName("yarnBuild")?.mustRunAfter("yarnModules")
+      }
     }
   }
 }
