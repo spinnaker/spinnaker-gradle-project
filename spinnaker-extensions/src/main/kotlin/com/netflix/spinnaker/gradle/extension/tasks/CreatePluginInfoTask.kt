@@ -42,16 +42,16 @@ open class CreatePluginInfoTask : DefaultTask() {
   override fun getGroup(): String = Plugins.GROUP
 
   @Internal
-  val rootProjectVersion: String = getParent(project).version.toString()
+  val rootProjectVersion: String = project.version.toString()
 
   @TaskAction
   fun doAction() {
-    val allPluginExts = getParent(project)
+    val allPluginExts = project
       .subprojects
       .mapNotNull { it.extensions.findByType(SpinnakerPluginExtension::class.java) }
       .toMutableList()
 
-    val bundleExt = getParent(project).extensions.findByType(SpinnakerBundleExtension::class.java)
+    val bundleExt = project.extensions.findByType(SpinnakerBundleExtension::class.java)
       ?: throw IllegalStateException("A 'spinnakerBundle' configuration block is required")
 
     val requires = allPluginExts.map { it.requires ?: "${it.serviceName}>=0.0.0" }
@@ -64,7 +64,7 @@ open class CreatePluginInfoTask : DefaultTask() {
       }
       .joinToString(",")
 
-    val compatibility = getParent(project)
+    val compatibility = project
       .subprojects
       .flatMap { it.tasks.withType(CompatibilityTestTask::class.java) }
       .map { it.result.get().asFile }
@@ -98,7 +98,7 @@ open class CreatePluginInfoTask : DefaultTask() {
   }
 
   private fun getChecksum(): String {
-    return getParent(project).tasks
+    return project.tasks
       .getByName(CHECKSUM_BUNDLE_TASK_NAME)
       .outputs
       .files
