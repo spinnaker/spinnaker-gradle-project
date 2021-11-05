@@ -12,6 +12,7 @@ jobs:
     - uses: spinnaker/bumpdeps@master
       with:
         ref: ${{ github.event.client_payload.ref }}
+        baseBranch: ${{ github.event.client_payload.branch }}
         key: spinnakerGradleVersion
         repositories: clouddriver,deck,echo,fiat,front50,gate,halyard,igor,kayenta,keel,kork,orca,rosco,spinnaker-monitoring,swabbie
         mavenRepositoryUrl: https://plugins.gradle.org/m2
