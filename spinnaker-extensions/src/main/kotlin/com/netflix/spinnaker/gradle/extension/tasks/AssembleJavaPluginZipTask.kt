@@ -21,6 +21,7 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.kotlin.dsl.getByType
 import java.io.File
 import java.lang.IllegalStateException
 
@@ -40,7 +41,7 @@ open class AssembleJavaPluginZipTask : Zip() {
     this.archiveVersion.set("")
     this.archiveExtension.set("zip")
 
-    val sourceSets = project.extensions.findByType(JavaPluginExtension::class.java)!!.sourceSets
+    val sourceSets = project.extensions.getByType<JavaPluginExtension>().sourceSets
 
     val configs = listOf("implementation", "runtimeOnly").map { project.configurations.getByName(it).copy() }
     configs.forEach { it.isCanBeResolved  = true }
