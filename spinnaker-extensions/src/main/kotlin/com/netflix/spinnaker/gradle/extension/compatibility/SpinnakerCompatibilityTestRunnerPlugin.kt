@@ -22,6 +22,7 @@ import com.netflix.spinnaker.gradle.extension.extensions.SpinnakerBundleExtensio
 import com.netflix.spinnaker.gradle.extension.extensions.SpinnakerPluginExtension
 import com.netflix.spinnaker.gradle.extension.extensions.VersionTestConfig
 import com.netflix.spinnaker.gradle.extension.getParent
+import com.netflix.spinnaker.gradle.extension.Plugins.RELEASE_BUNDLE_TASK_NAME
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -121,6 +122,9 @@ class SpinnakerCompatibilityTestRunnerPlugin : Plugin<Project> {
       description = "Runs Spinnaker compatibility tests"
       group = GROUP
       dependsOn(versionTestConfigs.map { ":${project.name}:compatibilityTest-${project.name}-${it.version}" })
+      val releaseBundle = getParent(project).tasks.findByName(RELEASE_BUNDLE_TASK_NAME)
+      if(releaseBundle != null)
+        releaseBundle.mustRunAfter(TASK_NAME)
       doLast {
         val failedTests = getParent(project).subprojects
           .flatMap { it.tasks.withType(CompatibilityTestTask::class.java) }
